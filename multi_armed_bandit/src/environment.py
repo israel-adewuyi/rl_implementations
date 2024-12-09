@@ -26,11 +26,11 @@ class MultiArmedBandit(gym.Env):
         self.observation_space = gym.spaces.Discrete(1)
         self.reset()
 
-    def step(self, arm: ActType) -> Tuple[ObsType, float, bool, dict]:
-        assert self.arm_reward_means.contains(arm)
+    def step(self, arm: ActType) -> Tuple[ObsType, float, bool, bool, dict]:
+        assert self.action_space.contains(arm)
 
         if not self.stationary:
-            drift = self.np_random.normal(loc=0.0, scale=0.0, size=(self.num_arms))
+            drift = self.np_random.normal(loc=0.0, scale=1.0, size=(self.num_arms))
             self.arm_reward_means += drift
             self.best_arm = int(np.argmax(self.arm_reward_means))
         
@@ -38,18 +38,18 @@ class MultiArmedBandit(gym.Env):
         obs = 0
         done = False
         info = {'best_arm' : self.best_arm}
-        return (obs, reward, done, info)
+        return (obs, reward, done, False, info)
         
 
-    def reset(self, seed: Optional[int] = None) -> ObsType:
+    def reset(self, seed: Optional[int] = None, options=None) -> ObsType:
         super().reset(seed=seed)
 
         if self.stationary:
-            self.arm_reward_means = self.np_random.normal(loc=0.0, scale=1.0, size=(self.num_arms,))
+            self.arm_reward_means = self.np_random.normal(loc=0.0, scale=1.0, size=self.num_arms)
         else:
             self.arm_reward_means = self.zeros(shape=(self.num_arms, ))
         
-        print(self.arm_reward_means)
+        # print(self.arm_reward_means)
 
         self.best_arm = int(np.argmax(self.arm_reward_means))
         return 0
