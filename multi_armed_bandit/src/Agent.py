@@ -44,10 +44,14 @@ class EpsGreedyAgent(Agent):
         super().__init__(num_arms, seed)
         
     def get_action(self) -> ActType:
-        if self.rng.random() < epsilon:
-            return self.rng.integers(0, self.num_arms)
+        prob = self.rng.random()
+        
+        if prob < self.epsilon:
+            action = self.rng.integers(0, self.num_arms)
         else:
-            return int(np.argmax(self.Q))
+            action = np.argmax(self.Q)
+
+        return action
 
     def observe(self, action: ActType, reward: float, info: dict):
         self.N[action] += 1
@@ -55,6 +59,22 @@ class EpsGreedyAgent(Agent):
 
     def reset(self, seed: int):
         super().reset(seed=seed)
-        self.Q = np.fill(self.num_arms, self.optimism)
-        self.N = np.zeros(self.num_arms)
+        self.Q = np.full(self.num_arms, self.optimism)
+        self.N = np.zeros((self.num_arms, ))
+
+class CheatyMcCheater(Agent):
+    def __init__(self, num_arms: int, seed: int):
+        super().__init__(num_arms, seed)
+        self.best_arm = 0
+
+    def get_action(self):
+        # YOUR CODE HERE
+        return self.best_arm
+
+    def observe(self, action: int, reward: float, info: dict):
+        # YOUR CODE HERE
+        self.best_arm = info['best_arm']
+
+    def __repr__(self):
+        return "Cheater"
         
