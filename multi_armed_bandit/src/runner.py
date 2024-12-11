@@ -2,12 +2,14 @@ import gym
 import numpy as np
 
 from environment import MultiArmedBandit
-from Agent import RandomAgent
-from utils import run_agent
+from Agent import RandomAgent, EpsGreedyAgent, CheatyMcCheater
+from utils import run_agent, plot_rewards
 
 max_episode_steps = 1000
 num_arms = 10
 stationary = True
+epsilon = 0.01
+optimism = 0
 
 if __name__ == '__main__':
     gym.envs.registration.register(
@@ -19,13 +21,37 @@ if __name__ == '__main__':
         kwargs={'num_arms':num_arms, 'stationary':stationary}
     )
     
-    env = gym.make("KBandit/10ArmedBandit-v0")
+    env = gym.make("KBandit/10ArmedBandit-v0", stationary=True)
     agent = RandomAgent(num_arms, 0)
 
-    all_rewards, all_corrects = run_agent(env, agent)
-    
-    print(f"Expected correct freq: {1/10}, actual: {all_corrects.mean():.6f}")
-    assert np.isclose(all_corrects.mean(), 1/10, atol=0.05), "Random agent is not random enough!"
-    
-    print(f"Expected average reward: 0.0, actual: {all_rewards.mean():.6f}")
-    assert np.isclose(all_rewards.mean(), 0, atol=0.05), "Random agent should be getting mean arm reward, which is zero."
+    all_rewards, names = [], []
+
+    rewards, correct = run_agent(env, agent, 200, 42)
+    name = f"random_agent"
+    all_rewards.append(rewards)
+    names.append(name)
+    print(name)
+    print(f" -> Frequency of correct arm: {correct.mean():.4f}")
+    print(f" -> Average reward: {rewards.mean():.4f}")
+
+    for optimism in [0, 5]:
+        agent = EpsGreedyAgent(num_arms=num_arms, seed=0, epsilon=epsilon, optimism=optimism)
+        name = f"eps_greedy_{epsilon}_{optimism}"
+        rewards, correct = run_agent(env, agent, n_runs=200, base_seed=42)
+        all_rewards.append(rewards)
+        names.append(name)
+        print(name)
+        print(f" -> Frequency of correct arm: {correct.mean():.4f}")
+        print(f" -> Average reward: {rewards.mean():.4f}")
+
+    cheat_agent = CheatyMcCheater(num_arms, 0)
+    rewards, correct = run_agent(env, cheat_agent, 200, 42)
+    name = f"cheating_agent"
+    all_rewards.append(rewards)
+    names.append(name)
+    print(name)
+    print(f" -> Frequency of correct arm: {correct.mean():.4f}")
+    print(f" -> Average reward: {rewards.mean():.4f}")
+
+    plot_rewards(all_rewards, names, 15)
+        
